@@ -32,7 +32,7 @@ static uint16_t tx_gap_repeat = 0;	//unsigned int
 static byte tx_PulseCounts[4] = {13,4,4,13}; // ticks for 0-On,1-On,0-Off,1-Off
 static byte tx_gap1_count = 66; // Repeat press gap count (6.6 msec)
 static byte tx_gap2_mult = 250; // Long Gap muliplier 25mS
-static uint15_t tx_gap2_count = 20; // Inter message code gap count (units of 25mS)
+static uint16_t tx_gap2_count = 20; // Inter message code gap count (units of 25mS)
 
 static const byte tx_state_idle = 0;
 static const byte tx_state_msgStart = 1;
