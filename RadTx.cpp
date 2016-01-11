@@ -13,6 +13,8 @@ static int tx_pin = 3;
 #endif
 
 static const byte tx_msglen_max = 16; // Maximum number of presses in a sequence
+static const uint16_t tx_msg_end = 0xffff;
+static const uint16_t tx_msg_delay = 0xf000; //Numbers above this are a delay in seconds
 
 //Transmit mode constants and variables
 static byte tx_repeats = 12; // Number of repeats of each button press sent
@@ -30,7 +32,7 @@ static uint16_t tx_gap_repeat = 0;	//unsigned int
 static byte tx_PulseCounts[4] = {13,4,4,13}; // ticks for 0-On,1-On,0-Off,1-Off
 static byte tx_gap1_count = 66; // Repeat press gap count (6.6 msec)
 static byte tx_gap2_mult = 250; // Long Gap muliplier 25mS
-static byte tx_gap2_count = 20; // Inter message code gap count (units of 25mS)
+static uint15_t tx_gap2_count = 20; // Inter message code gap count (units of 25mS)
 
 static const byte tx_state_idle = 0;
 static const byte tx_state_msgStart = 1;
@@ -42,11 +44,13 @@ static const byte tx_state_gap1Start = 6;
 static const byte tx_state_gap1End = 7;
 static const byte tx_state_gap2Start = 8;
 static const byte tx_state_gap2End = 9;
+static const byte tx_state_delayStart = 10;
+static const byte tx_state_delayEnd = 11;
 
 static uint16 tx_bit_mask = 0; // bit mask in current button
 static byte tx_num_buttons = 0; // number of buttons sent
-static byte tx_gap2_counter = 0; 
-
+static uint16_t tx_delay_counter = 0; 
+static uint16_t tx_delay_count = 0; 
 
 void isrTXtimer() {
    //Set low after toggle count interrupts
@@ -105,24 +109,40 @@ void isrTXtimer() {
            tx_state_buttonStart;
          } else {
            tx_num_buttons++;
-           if(buf[tx_num_buttons] == 0xffff) {
+           if(buf[tx_num_buttons] <= 0xfff) {
              tx_state = tx_state_gap2Start;
-           } else {
+           } else if (buf[tx_num_buttons] == 0xffff) {
              //disable timer interrupt
              rw_timer_Stop();
              tx_msg_active = false;
              tx_toggle_count = 1;
              tx_state = tx_state_idle;
-           }
+           } else {
+             tx_toggle_count = 1;
+             tx_state = tx_state_delayStart;
          }
          break;
        case tx_state_gap2Start:
          tx_toggle_count = tx_gap2_muliplier;
-         tx_gap2_counter = 0;
+         tx_delay_counter = 0;
          break;
        case tx_state_gap2End:
-         tx_gap2_counter++;
-         if(tx_gap2_counter >= tx_gap2_count) {
+         tx_delay_counter++;
+         if(tx_delay_counter >= tx_gap2_count) {
+           tx_toggle_count = 1;
+           tx_state = tx_state_buttonStart;
+         } else {
+           tx_toggle_count = tx_gap2_multiplier;
+         }
+         break;
+       case tx_state_delayStart:
+         tx_toggle_count = tx_gap2_muliplier;
+         tx_delay_counter = 0;
+         tx_delay_count = buf[tx_num_buttons] & 0x7fff;
+         break;
+       case tx_state_delayEnd:
+         tx_delay_counter++;
+         if(tx_gap2_counter >= tx_delay_count) {
            tx_toggle_count = 1;
            tx_state = tx_state_buttonStart;
          } else {

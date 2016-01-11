@@ -1,6 +1,6 @@
 #include <RadTx.h>
-
-uint16_t msg[] = {4,0,3,0,5,9,3,0,1,2};
+//on,mode,mode,mode,delay1200,off,delay1200,end
+uint16_t msg[] = {0x027e,0x026f,0x026f,0x026f,0x84b0,0x027e,0x84b0,0xffff};
 long timeout = 0;
 
 void setup() {
