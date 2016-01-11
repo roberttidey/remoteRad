@@ -174,7 +174,7 @@ void radtx_send(uint16_t *msg) {
 }
 
 /**
-  Set things up to transmit LightWaveRF 434Mhz messages
+  Set things up to transmit messages
 **/
 void radtx_setup(int pin, byte repeats, byte invert, int period) {
 	if(pin !=0) {
@@ -212,17 +212,17 @@ void (*isrRoutine) ();
 #include "SparkIntervalTimer/SparkIntervalTimer.h"
 IntervalTimer txmtTimer;
 
-extern void lw_timer_Setup(void (*isrCallback)(), int period) {
+extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	isrRoutine = isrCallback;
 	noInterrupts();
 	txmtTimer.begin(isrRoutine, period, uSec);	//set IntervalTimer interrupt at period uSec (default 140)
 	txmtTimer.interrupt_SIT(INT_DISABLE); // initialised as off, first message starts it
 	interrupts();
 }
-extern void lw_timer_Start() {
+extern void rad_timer_Start() {
 	txmtTimer.interrupt_SIT(INT_ENABLE);
 }
-extern void lw_timer_Stop() {
+extern void rad_timer_Stop() {
 	txmtTimer.interrupt_SIT(INT_DISABLE);
 }
 
@@ -230,7 +230,7 @@ extern void lw_timer_Stop() {
 #include "DueTimer.h"
 DueTimer txmtTimer = DueTimer::DueTimer(0);
 boolean dueDefined = false;
-extern void lw_timer_Setup(void (*isrCallback)(), int period) {
+extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	if (!dueDefined) {
 		txmtTimer = DueTimer::getAvailable();
 		dueDefined = true;
@@ -241,17 +241,17 @@ extern void lw_timer_Setup(void (*isrCallback)(), int period) {
 	txmtTimer.setPeriod(period);
 	interrupts();
 }
-extern void lw_timer_Start() {
+extern void rad_timer_Start() {
 	txmtTimer.start();
 }
 
-extern void lw_timer_Stop() {
+extern void rad_timer_Stop() {
 	txmtTimer.stop();
 }
 
 #elif defined(PRO32U4)
 //32u4 which uses the TIMER3
-extern void lw_timer_Setup(void (*isrCallback)(), int period) {
+extern void rad_timer_Setup(void (*isrCallback)(), int period) {
     isrRoutine = isrCallback; // unused here as callback is direct
     byte clock = (period / 4) - 1;;
     cli();//stop interrupts
@@ -271,12 +271,12 @@ extern void lw_timer_Setup(void (*isrCallback)(), int period) {
     sei();//enable interrupts
 }
 
-extern void lw_timer_Start() {
+extern void rad_timer_Start() {
    //enable timer 2 interrupts
     TIMSK3 |= (1 << OCIE3A);
 }
 
-extern void lw_timer_Stop() {
+extern void rad_timer_Stop() {
     //disable timer 2 interrupt
     TIMSK3 &= ~(1 << OCIE3A);
 }
@@ -288,7 +288,7 @@ ISR(TIMER3_COMPA_vect){
 
 #else
 //Default case is Arduino Mega328 which uses the TIMER2
-extern void lw_timer_Setup(void (*isrCallback)(), int period) {
+extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	isrRoutine = isrCallback; // unused here as callback is direct
 	byte clock = (period / 4) - 1;;
 	cli();//stop interrupts
@@ -307,12 +307,12 @@ extern void lw_timer_Setup(void (*isrCallback)(), int period) {
 	sei();//enable interrupts
 }
 
-extern void lw_timer_Start() {
+extern void rad_timer_Start() {
    //enable timer 2 interrupts
 	TIMSK2 |= (1 << OCIE2A);
 }
 
-extern void lw_timer_Stop() {
+extern void rad_timer_Stop() {
 	//disable timer 2 interrupt
 	TIMSK2 &= ~(1 << OCIE2A);
 }
