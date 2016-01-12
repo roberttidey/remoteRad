@@ -47,7 +47,7 @@ static const byte tx_state_gap2End = 9;
 static const byte tx_state_delayStart = 10;
 static const byte tx_state_delayEnd = 11;
 
-static uint16 tx_bit_mask = 0; // bit mask in current button
+static uint16_t tx_bit_mask = 0; // bit mask in current button
 static byte tx_num_buttons = 0; // number of buttons sent
 static uint16_t tx_delay_counter = 0; 
 static uint16_t tx_delay_count = 0; 
@@ -106,24 +106,25 @@ void isrTXtimer() {
          tx_repeat++;
          if(tx_repeat < tx_repeats) {
            tx_toggle_count = 1;
-           tx_state_buttonStart;
+           tx_state = tx_state_buttonStart;
          } else {
            tx_num_buttons++;
-           if(buf[tx_num_buttons] <= 0xfff) {
+           if(tx_buf[tx_num_buttons] <= 0xfff) {
              tx_state = tx_state_gap2Start;
-           } else if (buf[tx_num_buttons] == 0xffff) {
+           } else if (tx_buf[tx_num_buttons] == 0xffff) {
              //disable timer interrupt
-             rw_timer_Stop();
+             rad_timer_Stop();
              tx_msg_active = false;
              tx_toggle_count = 1;
              tx_state = tx_state_idle;
            } else {
              tx_toggle_count = 1;
              tx_state = tx_state_delayStart;
+           }
          }
          break;
        case tx_state_gap2Start:
-         tx_toggle_count = tx_gap2_muliplier;
+         tx_toggle_count = tx_gap2_mult;
          tx_delay_counter = 0;
          break;
        case tx_state_gap2End:
@@ -132,21 +133,21 @@ void isrTXtimer() {
            tx_toggle_count = 1;
            tx_state = tx_state_buttonStart;
          } else {
-           tx_toggle_count = tx_gap2_multiplier;
+           tx_toggle_count = tx_gap2_mult;
          }
          break;
        case tx_state_delayStart:
-         tx_toggle_count = tx_gap2_muliplier;
+         tx_toggle_count = tx_gap2_mult;
          tx_delay_counter = 0;
-         tx_delay_count = buf[tx_num_buttons] & 0x7fff;
+         tx_delay_count = tx_buf[tx_num_buttons] & 0x7fff;
          break;
        case tx_state_delayEnd:
          tx_delay_counter++;
-         if(tx_gap2_counter >= tx_delay_count) {
+         if(tx_delay_counter >= tx_delay_count) {
            tx_toggle_count = 1;
            tx_state = tx_state_buttonStart;
          } else {
-           tx_toggle_count = tx_gap2_multiplier;
+           tx_toggle_count = tx_gap2_mult;
          }
          break;
      }
@@ -168,7 +169,7 @@ void radtx_send(uint16_t *msg) {
   do {
     tx_buf[0] = msg[index];
     index++;
-  while (index < tx_msglen_max && msg[index - 1] <> 0xffff);
+  } while (index < tx_msglen_max && msg[index - 1] != 0xffff);
   rad_timer_Start();
   tx_msg_active = true;
 }
