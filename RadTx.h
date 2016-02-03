@@ -29,12 +29,6 @@
 //Sets up basic parameters must be called at least once
 extern void radtx_setup(int pin, byte repeats, byte invert, int uSec);
 
-//Allows changing basic tick counts from their defaults
-extern void radtx_setTickCounts( byte lowCount, byte highCount, byte trailCount, byte gapCount);
-
-//Allows multiplying the gap period for creating very large gaps
-extern void radtx_setGapMultiplier(byte gapMultiplier);
-
 //Checks whether tx is free to accept a new message
 extern boolean radtx_free();
 

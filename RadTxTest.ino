@@ -15,7 +15,7 @@
 // msg6 on,mode,mode,mode,delay1200,off,delay1200,end
 // msg7 on,mode,mode,mode,delay1200,off,delay1200,end
 // msg8 on,mode,mode,mode,delay1200,off,delay1200,end
-// msg9 on,mode,mode,mode,delay1200,off,delay1200,end
+// msg9 delay5000,end
 uint16_t msg[MSG_LEN * MAX_MSGS] = {0x027e,0xffff,0,0,0,0,0,0,0,0,
                                     0x0277,0xffff,0,0,0,0,0,0,0,0,
                                     0x026f,0xffff,0,0,0,0,0,0,0,0,
@@ -25,7 +25,7 @@ uint16_t msg[MSG_LEN * MAX_MSGS] = {0x027e,0xffff,0,0,0,0,0,0,0,0,
                                     0x027e,0x026f,0x026f,0x026f,0x84b0,0x027e,0x84b0,0xffff,0,0,
                                     0x027e,0x026f,0x026f,0x026f,0x84b0,0x027e,0x84b0,0xffff,0,0,
                                     0x027e,0x026f,0x026f,0x026f,0x84b0,0x027e,0x84b0,0xffff,0,0,
-                                    0x027e,0x026f,0x026f,0x026f,0x84b0,0x027e,0x84b0,0xffff,0,0,
+                                    0x9388,0xffff,0,0,0,0,0,0,0,0
 };
 long timeout = 0;
 int sendMsg(String command);
@@ -33,7 +33,7 @@ int LED = D7;
 int IRLED = D0;
 
 void setup() {
-  //Transmit on pin IRLED, 10 repeats,no invert, 100uSec tick)
+  //Transmit on pin IRLED, 10 repeats,no invert, 140uSec tick)
   pinMode(LED, OUTPUT);
   radtx_setup(IRLED, 10, 0, 140);
   Particle.function("send", sendMsg);
