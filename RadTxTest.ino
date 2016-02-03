@@ -16,15 +16,15 @@
 // msg7 on,mode,mode,mode,delay1000,off,delay1000,end
 // msg8 on,mode,mode,mode,delay1000,off,delay1000,end
 // msg9 delay3000,end
-uint16_t msg[MSG_LEN * MAX_MSGS] = {0x027e,0xffff,0,0,0,0,0,0,0,0,
-                                    0x0277,0xffff,0,0,0,0,0,0,0,0,
-                                    0x026f,0xffff,0,0,0,0,0,0,0,0,
-                                    0x0277,0xffff,0,0,0,0,0,0,0,0,
-                                    0x0239,0xffff,0,0,0,0,0,0,0,0,
-                                    0x027d,0xffff,0,0,0,0,0,0,0,0,
-                                    0x027e,0x026f,0x026f,0x026f,0x8028,0x027e,0x8028,0xffff,0,0,
-                                    0x027e,0x026f,0x026f,0x026f,0x8028,0x027e,0x8028,0xffff,0,0,
-                                    0x027e,0x026f,0x026f,0x026f,0x8028,0x027e,0x8028,0xffff,0,0,
+uint16_t msg[MSG_LEN * MAX_MSGS] = {BTN_ONOFF,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_TEMP,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_MODE,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_TIME,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_DOWN,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_UP,0xffff,0,0,0,0,0,0,0,0,
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
                                     0x8078,0xffff,0,0,0,0,0,0,0,0
 };
 long timeout = 0;

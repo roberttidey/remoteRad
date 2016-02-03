@@ -26,6 +26,14 @@
 #define TX_PIN_DEFAULT 3
 #endif
 
+//Define button hex code
+#define BTN_ONOFF 0x027e
+#define BTN_TEMP  0x0277
+#define BTN_MODE  0x026f
+#define BTN_TIME  0x027b
+#define BTN_DOWN  0x0239
+#define BTN_UP    0x027d
+
 //Sets up basic parameters must be called at least once
 extern void radtx_setup(int pin, byte repeats, byte invert, int uSec);
 
