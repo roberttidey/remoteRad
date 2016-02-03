@@ -132,6 +132,7 @@ void isrTXtimer() {
          if(tx_delay_counter >= tx_gap2_count) {
            tx_toggle_count = 1;
            tx_num_buttons++;
+           tx_repeat = 0;
            tx_state = tx_state_buttonStart;
          } else {
            tx_toggle_count = tx_gap2_mult;
@@ -188,7 +189,7 @@ void radtx_send(uint16_t *msg) {
   Set things up to transmit messages
 **/
 void radtx_setup(int pin, byte repeats, byte invert, int period) {
-	if(pin !=0) {
+	if(pin >= 0 && pin <= 7) {
 		tx_pin = pin;
 	}
 	pinMode(tx_pin,OUTPUT);

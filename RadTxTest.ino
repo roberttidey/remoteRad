@@ -36,7 +36,7 @@ void setup() {
   //Transmit on pin IRLED, 10 repeats,no invert, 100uSec tick)
   pinMode(LED, OUTPUT);
   radtx_setup(IRLED, 10, 0, 100);
-  Particle.function("send", sendMsg);
+  Particle.function("sendMsg", sendMsg);
 }
 
 void loop() {
