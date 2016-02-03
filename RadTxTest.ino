@@ -31,15 +31,19 @@ long timeout = 0;
 int sendMsg(String command);
 int LED = D7;
 int IRLED = D0;
+String currentTime;
 
 void setup() {
   //Transmit on pin IRLED, 10 repeats,no invert, 100uSec tick)
   pinMode(LED, OUTPUT);
   radtx_setup(IRLED, 10, 0, 100);
   Particle.function("sendMsg", sendMsg);
+  Particle.variable("cTime", currentTime);
 }
 
 void loop() {
+    delay(1000);
+    currentTime = Time.timeStr();
 }
 
 int sendMsg(String command)
