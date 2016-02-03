@@ -35,6 +35,9 @@ extern boolean radtx_free();
 //Basic send of new message ( each button press is 12 bits in a word)
 extern void radtx_send(uint16_t* msg);
 
+//Debug return
+extern int radtx_debug();
+
 //Genralised timer routines go here
 //Sets up timer and the callback to the interrupt service routine
 void rad_timer_Setup(void (*isrCallback)(), int period);

@@ -26,7 +26,7 @@ static uint16_t tx_buf[tx_msglen_max]; // the message buffer
 static byte tx_repeat = 0; //counter for repeat of button
 static byte tx_state = 0;
 static byte tx_toggle_count = 1;
-static uint16_t tx_gap_repeat = 0;	//unsigned int
+static int tx_debug = 0;
 
 // These set the pulse durations in ticks
 static byte tx_PulseCounts[4] = {13,4,4,13}; // ticks for 0-On,1-On,0-Off,1-Off
@@ -71,9 +71,20 @@ void isrTXtimer() {
          tx_state = tx_state_buttonStart;
          break;
        case tx_state_buttonStart:
-         tx_toggle_count = 1;
-         tx_bit_mask = 0x800;
-         tx_state = tx_state_sendBitOn;
+         if(tx_buf[tx_num_buttons] <= 0xfff) {
+           tx_toggle_count = 1;
+           tx_bit_mask = 0x800;
+           tx_state = tx_state_sendBitOn;
+         } else if (tx_buf[tx_num_buttons] == 0xffff) {
+           //disable timer interrupt
+           rad_timer_Stop();
+           tx_msg_active = false;
+           tx_toggle_count = 1;
+           tx_state = tx_state_idle;
+         } else {
+           tx_toggle_count = 1;
+           tx_state = tx_state_delayStart;
+         }
          break;
        case tx_state_sendBitOn:
          digitalWrite(tx_pin, txon);
@@ -108,29 +119,19 @@ void isrTXtimer() {
            tx_toggle_count = 1;
            tx_state = tx_state_buttonStart;
          } else {
-           tx_num_buttons++;
-           if(tx_buf[tx_num_buttons] <= 0xfff) {
-             tx_state = tx_state_gap2Start;
-           } else if (tx_buf[tx_num_buttons] == 0xffff) {
-             //disable timer interrupt
-             rad_timer_Stop();
-             tx_msg_active = false;
-             tx_toggle_count = 1;
-             tx_state = tx_state_idle;
-           } else {
-             tx_toggle_count = 1;
-             tx_state = tx_state_delayStart;
-           }
+           tx_state = tx_state_gap2Start;
          }
          break;
        case tx_state_gap2Start:
          tx_toggle_count = tx_gap2_mult;
          tx_delay_counter = 0;
+         tx_state = tx_state_gap2End;
          break;
        case tx_state_gap2End:
          tx_delay_counter++;
          if(tx_delay_counter >= tx_gap2_count) {
            tx_toggle_count = 1;
+           tx_num_buttons++;
            tx_state = tx_state_buttonStart;
          } else {
            tx_toggle_count = tx_gap2_mult;
@@ -140,11 +141,13 @@ void isrTXtimer() {
          tx_toggle_count = tx_gap2_mult;
          tx_delay_counter = 0;
          tx_delay_count = tx_buf[tx_num_buttons] & 0x7fff;
+         tx_state = tx_state_delayEnd;
          break;
        case tx_state_delayEnd:
          tx_delay_counter++;
          if(tx_delay_counter >= tx_delay_count) {
            tx_toggle_count = 1;
+           tx_num_buttons++;
            tx_state = tx_state_buttonStart;
          } else {
            tx_toggle_count = tx_gap2_mult;
@@ -162,12 +165,19 @@ boolean radtx_free() {
 }
 
 /**
+  Return debg int
+**/
+int radtx_debug() {
+  return tx_debug;
+}
+
+/**
   Send a radiator message (12 bit messages) terminated by 0xffff
 **/
 void radtx_send(uint16_t *msg) {
   int index = 0;
   do {
-    tx_buf[0] = msg[index];
+    tx_buf[index] = msg[index];
     index++;
   } while (index < tx_msglen_max && msg[index - 1] != 0xffff);
   rad_timer_Start();
