@@ -114,6 +114,12 @@ void execSchedule()
     nowDay = Time.day(nowTime) - 1;
     nowMinute =(uint16_t)(24 * Time.hour(nowTime) + Time.minute(nowTime));
     
+    if(nowDay != lastEventDay)
+    {
+        // Request time synchronization from the Particle Cloud
+        Particle.syncTime();
+    }
+
     //Find first Event index in the schedule for today
     for(intEventTime = 0; intEventTime < 8; intEventTime++)
     {
