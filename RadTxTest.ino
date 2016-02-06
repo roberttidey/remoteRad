@@ -61,7 +61,6 @@ void setup() {
   Particle.function("receiveSch", receiveSchedule);
   Particle.variable("schedule", strSchedule);
   Particle.variable("cTime", strCurrentTime);
-  Particle.variable("radState", radState);
 }
 
 void loop() {
@@ -119,7 +118,7 @@ void execSchedule()
         // Request time synchronization from the Particle Cloud
         Particle.syncTime();
     }
-
+    
     //Find first Event index in the schedule for today
     for(intEventTime = 0; intEventTime < 8; intEventTime++)
     {
@@ -138,6 +137,7 @@ void execSchedule()
         {
             lastEventTime = intEventTime;
             lastEventDay = nowDay;
+            makeStrSchedule();
             //Only process if enable flag set
             if((eventMinute & 0x800) != 0)
             {
@@ -243,17 +243,17 @@ void saveSchedule()
 
 /*
 function to create string version of schedule
-56 values csv separated
+radState,Day,timeperiod, + 56 values csv separated
 */
 void makeStrSchedule()
 {
     int intDay, intTime;           
-    strSchedule = "";
+    strSchedule = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
     for(intDay = 0; intDay < 7; intDay++)
     {
         for(intTime = 0; intTime < 8; intTime++)
         {
-           strSchedule += String(schedule[intTime][intDay]) + String(',');
+           strSchedule += String(',') + String(schedule[intTime][intDay]);
         }
     }
 }
