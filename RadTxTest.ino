@@ -123,7 +123,7 @@ void execSchedule()
     for(intEventTime = 0; intEventTime < 8; intEventTime++)
     {
         eventMinute = schedule[nowDay][intEventTime];
-        if(nowMinute >= schedule[nowDay][intEventTime])
+        if(nowMinute >= (eventMinute & 0x7ff))
         {
             bFound = true;
             break;
@@ -170,13 +170,14 @@ int receiveSchedule(String strRxSchedule)
     int intTime = 0;
     int intDay = -1;
     int intVal;
-    
+   
     while(intTime < 8 && index2 >= 0)
     {
-        index2 = strRxSchedule.indexOf(index1, ',');
+        index2 = strRxSchedule.indexOf(',', index1);
         if (index2 > 0)
         {
             intVal = strRxSchedule.substring(index1, index2).toInt();
+            index1 = index2 + 1;
         }
         else
         {
