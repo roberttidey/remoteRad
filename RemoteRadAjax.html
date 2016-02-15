@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<body>
+   <P>Radiator control test bed<br><br>
+   <select id="core">
+      <option value="photon">Photon</option>
+      <option value="core1">Core 1</option>
+      <option value="core2">Core 2</option>
+   </select>
+   <P>Current Schedule <span id="curSchedule"></span><br><br>
+   <input type="text" id="schedValue" name="schedValue" size="50" value="0,60,120,180,240,300,360,420,480"/>
+   <button id="updateS" onclick="updateSchedule()">Update Schedule Day</button><br><br> 
+   <select id="msgNumber" onchange="checkRaw()">
+      <option value="0">On/Off</option>
+      <option value="1">Temp</option>
+      <option value="2">Mode</option>
+      <option value="3">Time</option>
+      <option value="4">Down</option>
+      <option value="5">Up</option>
+      <option value="6">On-Mode-Mode-Mode</option>
+      <option value="7">On-Mode-Mode-Mode</option>
+      <option value="8">On-Mode-Mode-Mode</option>
+      <option value="9">Raw Code</option>
+   </select>
+   <button id="sendM" onclick="sendMessage()">Send Message</button>
+   <input type="text" id="rawValue" name="rawValue" size="10" value="0" style="display:none"/>   
+
+   <script type="text/javascript">
+      var accessToken = "0";
+      var setScheduleFunc = "receiveSch";
+      var getScheduleFunc = "schedule";
+      var sendMessageFunc = "sendMsg";
+      
+      getCurrentSchedule();
+
+      function deviceID() {
+         var devicename = document.getElementById('core').value;
+         var ID;
+         if (devicename == "photon") {
+            ID = "0";
+         } else if (devicename == "core1") {
+            ID = "0";
+         } else if (devicename == "core2") {
+            ID = "0";
+         }
+         return ID;
+      }
+      
+      function checkRaw() {
+         var msg = document.getElementById('msgNumber').value;
+         if (msg == "9") {
+            document.getElementById('rawValue').style="display:inline";
+         } else {
+            document.getElementById('rawValue').style="display:none";
+         }
+      }
+      
+      function getCurrentSchedule() {
+         var sch;
+         requestURL = "https://api.spark.io/v1/devices/" + deviceID() + "/" + getScheduleFunc + "/?access_token=" + accessToken;
+         $.getJSON(requestURL, function(json) {
+            var array = json.result.split(',');
+            sch += "State: " + array[0] + "  LastDay:" + array[1] + " LastTime:" + array[2] + "<BR><table>";
+            sch+= "<TR><TH>Day</TH><TH>On1</TH><TH>Off1</TH><TH>On2</TH><TH>Off2</TH><TH>On3</TH><TH>Off3</TH><TH>On4</TH><TH>Off4</TH></TR>";
+            for(i=0; i<7;i++) {
+               sch+= "<TR><TD>" + i + "</TD>";
+               for(j=0;j<8;j++) {
+                  var event = array[8*i+3+j];
+                  if (event > 2047) {
+                     sch+= "<TD>None</TD>";
+                  } else if (event > 1439) {
+                     sch+= "<TD>Bad</TD>";
+                  } else {
+                     sch+= "<TD>" + ("0" + Math.floor(event/60)).slice(-2) + ":" + ("0" + event%60).slice(-2)+"</TD>";
+                  }
+               }
+               sch+= "</TR>";
+            }
+            sch+="<table>"
+            document.getElementById("curSchedule").innerHTML = sch;
+         });
+      }
+
+      function updateSchedule() {
+         var requestURL = "https://api.spark.io/v1/devices/" + deviceID() + "/" + setScheduleFunc;
+         $.post( requestURL, { params: document.getElementById('schedValue').value, access_token: accessToken });
+         getCurrentSchedule();
+      }
+
+      function sendMessage() {
+         var msg = document.getElementById('msgNumber').value;
+         if(msg =="9") {
+            msg = "$" + document.getElementById('rawCode').value;
+         }
+         var requestURL = "https://api.spark.io/v1/devices/" + deviceID() + "/" + sendMessageFunc;
+         $.post( requestURL, { params: msg, access_token: accessToken });
+      }
+   </script>
+</body>
+</html>

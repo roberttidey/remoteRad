@@ -22,10 +22,10 @@ uint16_t msg[MSG_LEN * MAX_MSGS] = {BTN_ONOFF,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_TIME,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_DOWN,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_UP,0xffff,0,0,0,0,0,0,0,0,
-                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
-                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
-                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0x8078,BTN_ONOFF,0x8028,0xffff,0,0,
-                                    0x8078,0xffff,0,0,0,0,0,0,0,0
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
+                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
+                                    0x8079,0xffff,0,0,0,0,0,0,0,0
 };
 
 // schedule holds 4 on/off times per day
@@ -35,6 +35,7 @@ int16_t schedule[8][7];
 
 //protypes
 int sendMsg(String command);
+int sendCmd(int msgIndex);
 void execSchedule();
 void loadSchedule();
 void saveSchedule();
@@ -74,8 +75,24 @@ Particle external function to Send an indexed message sequence
 */
 int sendMsg(String command)
 {
-  int msgIndex = command.toInt();
+  int msgIndex;
   
+  if(command.substring(1,1) == "$") {
+      msgIndex =  MAX_MSGS - 1;
+      msg[msgIndex * MSG_LEN] = (uint16_t)command.substring(2).toInt();
+  } else {
+       msgIndex = command.toInt();
+  }
+  return sendCmd(msgIndex);
+  
+}
+
+/*
+function to Send a message
+*/
+int sendCmd(int msgIndex)
+{
+
   // look for the matching command
   if(msgIndex >= 0 && msgIndex < MAX_MSGS)
   {
@@ -144,13 +161,13 @@ void execSchedule()
                 if((intEventTime & 0x1) && (radState == 1))
                 {
                     //Off period starting
-                    sendMsg("0");
+                    sendCmd(0);
                     radState = 0;
                 }
                 else if(radState == 0)
                 {
                     //On period starting
-                    sendMsg("6");
+                    sendCmd(6);
                     radState = 1;
                 }
             }
