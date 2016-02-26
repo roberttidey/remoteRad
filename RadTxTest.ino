@@ -32,6 +32,20 @@ uint16_t msg[MSG_LEN * MAX_MSGS] = {BTN_ONOFF,0xffff,0,0,0,0,0,0,0,0,
 // Each time is minutes from midnight 0-1439 11 sig bits
 // If 12th bit set then time event is ensabled
 int16_t schedule[8][7];
+int LED = D7;
+int IRLED = D0;
+long timeout = 0;
+int lastEventDay = 0;
+int lastEventTime = -1;
+//0 = Off, 1 = On
+int radState = 0;
+int execTimer = 0;
+int execTime = 5;
+
+String strCurrentTime;
+String strSchedule;
+String strStatus;
+String strDebug;
 
 //protypes
 int sendMsg(String command);
@@ -41,33 +55,30 @@ void loadSchedule();
 void saveSchedule();
 int receiveSchedule(String schedule);
 void makeStrSchedule();
+void makeStrStatus();
 
-int LED = D7;
-int IRLED = D0;
-long timeout = 0;
-int lastEventDay = 0;
-int lastEventTime = -1;
-//0 = Off, 1 = On
-int radState = 0;
-
-String strCurrentTime;
-String strSchedule;
 
 void setup() {
   //Transmit on pin IRLED, 10 repeats,no invert, 100uSec tick)
   pinMode(LED, OUTPUT);
   radtx_setup(IRLED, 10, 0, 100);
   loadSchedule();
+  execTimer = Time.now();
+  makeStrStatus();
   Particle.function("sendMsg", sendMsg);
   Particle.function("receiveSch", receiveSchedule);
   Particle.variable("schedule", strSchedule);
-  Particle.variable("cTime", strCurrentTime);
+  Particle.variable("status", strStatus);
 }
 
 void loop() {
-    delay(5000);
+    delay(100);
     strCurrentTime = Time.timeStr();
-    execSchedule();
+    if ((Time.now() - execTimer) > execTime) {
+      execTimer = Time.now();
+      execSchedule();
+      makeStrStatus();
+    }
 }
 
 /*
@@ -84,7 +95,6 @@ int sendMsg(String command)
        msgIndex = command.toInt();
   }
   return sendCmd(msgIndex);
-  
 }
 
 /*
@@ -125,10 +135,11 @@ void execSchedule()
     int intEventTime;
     uint16_t eventMinute;
     boolean bFound = false;
+    int newState;
     
     nowTime = Time.now();
-    nowDay = Time.day(nowTime) - 1;
-    nowMinute =(uint16_t)(24 * Time.hour(nowTime) + Time.minute(nowTime));
+    nowDay = Time.weekday(nowTime) - 1;
+    nowMinute =(uint16_t)(60 * Time.hour(nowTime) + Time.minute(nowTime));
     
     if(nowDay != lastEventDay)
     {
@@ -139,40 +150,44 @@ void execSchedule()
     //Find first Event index in the schedule for today
     for(intEventTime = 0; intEventTime < 8; intEventTime++)
     {
-        eventMinute = schedule[nowDay][intEventTime];
-        if(nowMinute >= (eventMinute & 0x7ff))
+        eventMinute = schedule[intEventTime][nowDay];
+        if(nowMinute < (eventMinute & 0x7ff))
         {
             bFound = true;
             break;
         }
     }
-    //Ignore first ever events if they are off events
-    if (bFound && (lastEventTime != -1 || (intEventTime & 0x1)))
+    if (!bFound)
     {
-        //Check to see if it has been handled already
-        if(intEventTime != lastEventTime || nowDay != lastEventDay)
+        intEventTime = 8;
+        eventMinute = 0;
+        newState = 0;
+    } else
+    {
+        newState = intEventTime & 0x1;
+    }
+    lastEventTime = intEventTime;
+    lastEventDay = nowDay;
+    //Ignore first ever events if they are off events
+    if (newState != radState)
+    {
+            //Only process if enable flag is clear
+        if((eventMinute & 0x800) == 0)
         {
-            lastEventTime = intEventTime;
-            lastEventDay = nowDay;
-            makeStrSchedule();
-            //Only process if enable flag set
-            if((eventMinute & 0x800) != 0)
+            if(newState == 0)
             {
-                if((intEventTime & 0x1) && (radState == 1))
-                {
-                    //Off period starting
-                    sendCmd(0);
-                    radState = 0;
-                }
-                else if(radState == 0)
-                {
-                    //On period starting
-                    sendCmd(6);
-                    radState = 1;
-                }
+                //Off period starting
+                sendCmd(0);
+                radState = 0;
             }
-              
+            else
+            {
+                //On period starting
+                sendCmd(6);
+                radState = 1;
+            }
         }
+              
     }
 }
 
@@ -236,7 +251,7 @@ void loadSchedule()
         }
     }
     makeStrSchedule();
-}
+} 
 
 /*
 function to load schedule from EEPROM
@@ -261,17 +276,29 @@ void saveSchedule()
 
 /*
 function to create string version of schedule
-radState,Day,timeperiod, + 56 values csv separated
+56 values csv separated
 */
 void makeStrSchedule()
 {
-    int intDay, intTime;           
-    strSchedule = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
+    int intDay, intTime; 
+    strSchedule = "";
     for(intDay = 0; intDay < 7; intDay++)
     {
         for(intTime = 0; intTime < 8; intTime++)
         {
-           strSchedule += String(',') + String(schedule[intTime][intDay]);
+           strSchedule += String(schedule[intTime][intDay]) + String(',');
         }
     }
+    strSchedule += String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
+    strSchedule += String(',') + String(strCurrentTime) + String(',') + String(strDebug);
+}
+
+/*
+function to create string version of status
+ values csv separated
+*/
+void makeStrStatus()
+{
+    strStatus = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
+    strStatus += String(',') + String(strCurrentTime) + String(',') + String(strDebug);
 }
