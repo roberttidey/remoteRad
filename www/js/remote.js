@@ -97,11 +97,33 @@ function getCurrentStatus() {
       function(str) {
          var array = str.split(',');
          var radiatorOn = (array[0] === "1");
+         var eventDay = parseInt(array[1]);
+         var eventPeriod = parseInt(array[2]);
          var statusTime = moment(array[3]);
+         
+         // Set status values
          $("#status-onoff").toggleClass("status-on", radiatorOn).prop("title", radiatorOn ? "On" : "Off");
          $("#status-time").text(statusTime.format("ddd D MMM HH:mm"));
-         //stat += "State: " + array[0] + "  LastDay:" + array[1] + " LastTime:" + array[2];
-         //stat += "<BR>Time: " + array[3] + "  Msg:" + array[4];
+         
+         // Highlight the last active event
+         $(".time-onoff").removeClass("active");
+         
+         // Period 0 means the first event today has not happened yet,
+         // so the last event was on the previous day.
+         if (eventPeriod == 0) {
+            eventDay = (eventDay == 0) ? 6 : eventDay-1;
+            eventPeriod = 7;
+         }
+         else {
+            eventPeriod -= 1;
+         }
+         
+         var periods = getDayPeriods(eventDay);
+         var selectedPeriod = eventPeriod/2;
+         var onOff = (eventPeriod%2 == 0) ? "on" : "off";
+         
+         var $row = periods[selectedPeriod].row;
+         $("[data-time=\"" + onOff + "\"]", $row).closest(".time-onoff").addClass("active");
       }
    );
 }
@@ -128,6 +150,91 @@ function timeToMinutes(str, enabled) {
    else {
       return false;
    }
+}
+
+function isDayChecked($row, day) {
+   var $day = $("[data-time=\"days\"] input[value=\"" + day + "\"]", $row);
+   return $day.prop("checked");
+}
+
+function getPeriod($row) {
+   var enabled = $("[data-time=\"enable\"]", $row).prop("checked");
+   var period = {
+      on: timeToMinutes($("[data-time=\"on\"]", $row).val(), enabled),
+      off: timeToMinutes($("[data-time=\"off\"]", $row).val(), enabled),
+      row: $row
+   };
+   if (period.on < period.off) {
+      return period;
+   }
+   else {
+      return false;
+   }
+}
+
+function getDayPeriods(day) {
+   var periods = [];
+      
+   // Find all of the periods for one day
+   $(".time-row").each(function() {
+      var $row = $(this);
+      if (isDayChecked($row, day))
+      {
+         var period = getPeriod($row);
+         if (period !== false) {
+            periods.push(period);
+         }
+         else {
+            console.log("Invalid time period in day " + day);
+         }
+      }
+   });
+      
+   // If there is more than one period, make sure the periods are in order
+   // from earliest to latest, and there are no overlaps.
+   if (periods.length > 1) {
+      
+      // Sort the periods by start time
+      periods.sort(function(a,b) {
+         if (a.on < b.on) {
+            return -1;
+         }
+         else if (a.on > b.on) {
+            return 1;
+         }
+         else {
+            return 0;
+         }
+      });
+      
+      // Check for overlaps
+      var validPeriods = [];
+      validPeriods.push(periods[0]);
+      for (p=1; p<periods.length; ++p) {
+         var p0 = validPeriods[validPeriods.length-1];
+         var p1 = periods[p];
+         if (p0.off < p1.on) {
+            validPeriods.push(p1);
+         }
+      }
+      periods = validPeriods;
+   }
+   
+   // Make sure there are exactly four periods
+   if (periods.length < 4) {
+      for (p=periods.length; p<=4; p++) {
+         periods.push({
+            on: INVALID_TIME,
+            off: INVALID_TIME
+         });
+      }
+   }
+   else if (periods.length > 4) {
+      periods.splice(4);
+      console.log("More than four periods for day " + day);
+   }
+   
+   return periods;
 }
 
 function getCurrentSchedule() {
@@ -169,72 +276,7 @@ function getCurrentSchedule() {
 function updateSchedule() {
    var sch = [];
    for (day=0; day<7; ++day) {
-      var periods = [];
-      
-      // Find all of the periods for one day
-      $(".time-row").each(function() {
-         var $row = $(this);
-         var $day = $("[data-time=\"days\"] input[value=\"" + day + "\"]", $row);
-         if ($day.prop("checked"))
-         {
-            var enabled = $("[data-time=\"enable\"]", $row).prop("checked");
-            var period = {
-               on: timeToMinutes($("[data-time=\"on\"]", $row).val(), enabled),
-               off: timeToMinutes($("[data-time=\"off\"]", $row).val(), enabled)
-            };
-            if (period.on < period.off) {
-               periods.push(period);
-            }
-            else {
-               console.log("Invalid time period in day " + day);
-            }
-         }
-      });
-      
-      // If there is more than one period, make sure the periods are in order
-      // from earliest to latest, and there are no overlaps.
-      if (periods.length > 1) {
-         
-         // Sort the periods by start time
-         periods.sort(function(a,b) {
-            if (a.on < b.on) {
-               return -1;
-            }
-            else if (a.on > b.on) {
-               return 1;
-            }
-            else {
-               return 0;
-            }
-         });
-         
-         // Check for overlaps
-         var validPeriods = [];
-         validPeriods.push(periods[0]);
-         for (p=1; p<periods.length; ++p) {
-            var p0 = validPeriods[validPeriods.length-1];
-            var p1 = periods[p];
-            if (p0.off < p1.on) {
-               validPeriods.push(p1);
-            }
-         }
-         periods = validPeriods;
-      }
-      
-      // Make sure there are exactly four periods
-      if (periods.length < 4) {
-         for (p=periods.length; p<=4; p++) {
-            periods.push({
-               on: INVALID_TIME,
-               off: INVALID_TIME
-            });
-         }
-      }
-      else if (periods.length > 4) {
-         periods.splice(4);
-         console.log("More than four periods for day " + day);
-      }
-      
+      var periods = getDayPeriods(day);
       var arr = [day];
       for (p=0; p<4; ++p) {
          arr.push(periods[p].on);

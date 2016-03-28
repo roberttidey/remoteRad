@@ -38,13 +38,13 @@
       </div>
    </nav>
 
-   <div class="container">
+   <div id="page-schedule" class="container">
       <form>
          <div id="schedule">
             <div id="time-row-template" class="time-row">
                <div class="time-onoff">
                   <div class="input-group bootstrap-timepicker timepicker">
-                     <span class="input-group-addon">On</span>
+                     <span class="input-group-addon time-onoff-label">On</span>
                      <input data-time="on" class="form-control" type="text" maxlength="5"/>
                      <span class="input-group-addon">
                         <i class="glyphicon glyphicon-time"></i>
@@ -53,7 +53,7 @@
                </div>
                <div class="time-onoff">
                   <div class="input-group bootstrap-timepicker timepicker">
-                     <span class="input-group-addon">Off</span>
+                     <span class="input-group-addon time-onoff-label">Off</span>
                      <input data-time="off" class="form-control" type="text" maxlength="5"/>
                      <span class="input-group-addon">
                         <i class="glyphicon glyphicon-time"></i>
@@ -105,6 +105,9 @@
       
       </form>
       
+   </div>
+   
+   <div id="page-settings">
    </div>
 
    <footer class="footer">
