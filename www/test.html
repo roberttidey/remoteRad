@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<title>Radiator Remote Control</title>
+</head>
+
+<body>
+   <h2>Radiator control test bed</h2>
+   <select id="core" onchange="refresh()">
+      <option value="none">Select ...</option>
+      <option value="photon">Photon</option>
+      <option value="core1">Core 1</option>
+      <option value="core2">Core 2</option>
+   </select><br><br>
+   <button id="refresh" onclick="refresh();">Refresh</button><br>
+   <h2>Current Schedule</h2><span id="curSchedule"></span>
+   <h2>Current Status</h2><span id="curStatus"></span>
+   <h2>Control</h2>
+   Day + 4 On/off minute times
+   <br><input type="text" id="schedValue" name="schedValue" size="50" value="0,06:00,08:00,10:00,12:00,13:00,14:00,18:00,23:00"/>
+   <button id="updateS" onclick="updateSchedule()">Update Schedule</button><br><br> 
+   <select id="msgNumber" onchange="checkRaw()">
+      <option value="0">On/Off</option>
+      <option value="1">Temp</option>
+      <option value="2">Mode</option>
+      <option value="3">Time</option>
+      <option value="4">Down</option>
+      <option value="5">Up</option>
+      <option value="6">On-Mode-Mode-Mode</option>
+      <option value="7">On-Mode-Mode-Mode</option>
+      <option value="8">On-Mode-Mode-Mode</option>
+      <option value="9">Raw Code</option>
+   </select>
+   <button id="sendM" onclick="sendMessage()">Send Message</button>
+   <input type="text" id="rawValue" name="rawValue" size="10" value="0" style="display:none"/>   
+
+   <script src="js/remote.js" type="text/javascript"></script>
+</body>
+</html>

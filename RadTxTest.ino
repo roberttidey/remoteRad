@@ -41,8 +41,8 @@ int lastEventTime = -1;
 int radState = 0;
 int execTimer = 0;
 int execTime = 5;
+int currentTime = 0;
 
-String strCurrentTime;
 String strSchedule;
 String strStatus;
 String strDebug;
@@ -54,6 +54,7 @@ void execSchedule();
 void loadSchedule();
 void saveSchedule();
 int receiveSchedule(String schedule);
+int setNtp(String ntpSetup);
 void makeStrSchedule();
 void makeStrStatus();
 
@@ -73,8 +74,8 @@ void setup() {
 
 void loop() {
     delay(100);
-    strCurrentTime = Time.timeStr();
-    if ((Time.now() - execTimer) > execTime) {
+    currentTime = Time.now();
+    if ((currentTime - execTimer) > execTime) {
       execTimer = Time.now();
       execSchedule();
       makeStrStatus();
@@ -96,6 +97,7 @@ int sendMsg(String command)
   }
   return sendCmd(msgIndex);
 }
+
 
 /*
 function to Send a message
@@ -140,12 +142,6 @@ void execSchedule()
     nowTime = Time.now();
     nowDay = Time.weekday(nowTime) - 1;
     nowMinute =(uint16_t)(60 * Time.hour(nowTime) + Time.minute(nowTime));
-    
-    if(nowDay != lastEventDay)
-    {
-        // Request time synchronization from the Particle Cloud
-        Particle.syncTime();
-    }
     
     //Find first Event index in the schedule for today
     for(intEventTime = 0; intEventTime < 8; intEventTime++)
@@ -289,8 +285,6 @@ void makeStrSchedule()
            strSchedule += String(schedule[intTime][intDay]) + String(',');
         }
     }
-    strSchedule += String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
-    strSchedule += String(',') + String(strCurrentTime) + String(',') + String(strDebug);
 }
 
 /*
@@ -300,5 +294,5 @@ function to create string version of status
 void makeStrStatus()
 {
     strStatus = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
-    strStatus += String(',') + String(strCurrentTime) + String(',') + String(strDebug);
+    strStatus += String(',') + Time.format(currentTime, TIME_FORMAT_ISO8601_FULL) + String(',') + String(strDebug);
 }
