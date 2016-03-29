@@ -1,6 +1,5 @@
 <?php
-define("BASE_URL", "https://api.spark.io/v1/devices/");
-define("ACCESS_TOKEN", "7da1ca98d5e6b4505dcece06e093c2688b596eca");
+require_once("config.php");
 
 function getDeviceId($deviceName)
 {
