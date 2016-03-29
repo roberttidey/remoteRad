@@ -119,7 +119,7 @@ function getCurrentStatus() {
          }
          
          var periods = getDayPeriods(eventDay);
-         var selectedPeriod = eventPeriod/2;
+         var selectedPeriod = Math.floor(eventPeriod/2);
          var onOff = (eventPeriod%2 == 0) ? "on" : "off";
          
          var $row = periods[selectedPeriod].row;
