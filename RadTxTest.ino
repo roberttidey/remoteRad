@@ -37,10 +37,14 @@ int IRLED = D0;
 long timeout = 0;
 int lastEventDay = 0;
 int lastEventTime = -1;
+int tZone = 0;
+int dstType = 0;
+
 //0 = Off, 1 = On
 int radState = 0;
 int execTimer = 0;
 int execTime = 5;
+int checkTime = 0;
 int currentTime = 0;
 
 String strSchedule;
@@ -48,6 +52,7 @@ String strStatus;
 String strDebug;
 
 //protypes
+int dstNow();
 int sendMsg(String command);
 int sendCmd(int msgIndex);
 void execSchedule();
@@ -64,6 +69,8 @@ void setup() {
   pinMode(LED, OUTPUT);
   radtx_setup(IRLED, 10, 0, 100);
   loadSchedule();
+  Time.zone(tZone);
+  Time.setFormat("%Y-%m-%dT%H:%M:%S");
   execTimer = Time.now();
   makeStrStatus();
   Particle.function("sendMsg", sendMsg);
@@ -74,12 +81,55 @@ void setup() {
 
 void loop() {
     delay(100);
-    currentTime = Time.now();
-    if ((currentTime - execTimer) > execTime) {
-      execTimer = Time.now();
+    currentTime = dstNow();
+    checkTime = Time.now();
+    if ((checkTime - execTimer) > execTime) {
+      execTimer = checkTime;
       execSchedule();
       makeStrStatus();
     }
+}
+
+/*
+Get time adjusted by dstType
+0 = Europe (Last Sunday in March Oct)
+1 = USA (2nd Sunday in March, 1st Sunday in November
+2 = None
+Calculations good till 2099
+*/
+
+int dstNow() {
+   int unixTime = Time.now();
+   int day = Time.day(unixTime);
+   int month = Time.month(unixTime);
+   int mins = Time.hour(unixTime) * 60 + Time.minute();
+   int yAdj = (Time.year(unixTime)* 5) / 4;
+   int dstDayS, dstDayE;
+   int dstOffset = 0;
+   
+   switch(dstType) {
+      case 0:
+         dstDayS = 31 - (4 + yAdj) % 7;
+         dstDayE = 31 - (1 + yAdj) % 7; 
+         if ((month > 3 && month < 10) ||
+            (month == 3  && day > dstDayS) ||
+            (month == 3  && day == dstDayS &&  mins > 60) ||
+            (month == 10 && day < dstDayE) ||
+            (month == 10  && day == dstDayE && mins < 61))
+               dstOffset = 3600;
+         break;
+      case 1:
+         dstDayS = 14 - (1 + yAdj) % 7;
+         dstDayE = 7 - (1 + yAdj) % 7; 
+         if ((month > 3 && month < 11) ||
+            (month == 3  && day > dstDayS) ||
+            (month == 3  && day == dstDayS &&  mins > 60) ||
+            (month == 11 && day < dstDayE) ||
+            (month == 11  && day == dstDayE && mins < 61))
+               dstOffset = 3600;
+         break;
+   }
+   return unixTime + dstOffset;
 }
 
 /*
@@ -294,5 +344,6 @@ function to create string version of status
 void makeStrStatus()
 {
     strStatus = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
-    strStatus += String(',') + Time.format(currentTime, TIME_FORMAT_ISO8601_FULL) + String(',') + String(strDebug);
+    strStatus += String(',') + Time.format(currentTime) + String(',') + String(strDebug);
 }
+
