@@ -3,6 +3,7 @@
  */
 var serverUrl = "remote.php";
 var deviceName = "core2";
+var readingSchedule = false;
 var INVALID_TIME = 1440;
 
 $(document).ready(function() {
@@ -106,24 +107,28 @@ function getCurrentStatus() {
          $("#status-time").text(statusTime.format("ddd D MMM HH:mm"));
          
          // Highlight the last active event
-         $(".time-onoff").removeClass("active");
-         
-         // Period 0 means the first event today has not happened yet,
-         // so the last event was on the previous day.
-         if (eventPeriod == 0) {
-            eventDay = (eventDay == 0) ? 6 : eventDay-1;
-            eventPeriod = 7;
+         // Don't do this if the schedule is currently being read, as the table may be incomplete.
+         if (readingSchedule === false)
+         {
+             $(".time-onoff").removeClass("active");
+             
+             // Period 0 means the first event today has not happened yet,
+             // so the last event was on the previous day.
+             if (eventPeriod == 0) {
+                eventDay = (eventDay == 0) ? 6 : eventDay-1;
+                eventPeriod = 7;
+             }
+             else {
+                eventPeriod -= 1;
+             }
+             
+             var periods = getDayPeriods(eventDay);
+             var selectedPeriod = Math.floor(eventPeriod/2);
+             var onOff = (eventPeriod%2 == 0) ? "on" : "off";
+             
+             var $row = periods[selectedPeriod].row;
+             $("[data-time=\"" + onOff + "\"]", $row).closest(".time-onoff").addClass("active");
          }
-         else {
-            eventPeriod -= 1;
-         }
-         
-         var periods = getDayPeriods(eventDay);
-         var selectedPeriod = eventPeriod/2;
-         var onOff = (eventPeriod%2 == 0) ? "on" : "off";
-         
-         var $row = periods[selectedPeriod].row;
-         $("[data-time=\"" + onOff + "\"]", $row).closest(".time-onoff").addClass("active");
       }
    );
 }
@@ -238,6 +243,7 @@ function getDayPeriods(day) {
 }
 
 function getCurrentSchedule() {
+    readingSchedule = true;
    $.get(serverUrl + "?deviceName=" + deviceName + "&cmd=schedule", {},
       function(str) {
          var array = str.split(',');
@@ -269,6 +275,7 @@ function getCurrentSchedule() {
             }
          }
          updateTable(sch);
+         readingSchedule = false;
       }
    );
 }
