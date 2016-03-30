@@ -222,7 +222,7 @@ void execSchedule()
     boolean bFound = false;
     int newState;
     
-    nowTime = Time.now();
+    nowTime = dstNow();
     nowDay = Time.weekday(nowTime) - 1;
     nowMinute =(uint16_t)(60 * Time.hour(nowTime) + Time.minute(nowTime));
     
