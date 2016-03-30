@@ -75,7 +75,6 @@ void setup() {
   makeStrStatus();
   Particle.function("sendMsg", sendMsg);
   Particle.function("receiveSch", receiveSchedule);
-  Particle.function("receiveConf", receiveConfig);
   Particle.variable("schedule", strSchedule);
   Particle.variable("status", strStatus);
 }
@@ -149,38 +148,6 @@ int sendMsg(String command)
   return sendCmd(msgIndex);
 }
 
-/*
-Particle external function to receive config values
-*/
-int receiveConfig(String strConfig)
-{
-    int index1 = 0;
-    int index2 = 0;
-    int configs[10];
-    int config;
-   
-   //Parse csv into integer array
-    while(config < 10 && index2 >= 0)
-    {
-        index2 = strConfig.indexOf(',', index1);
-        if (index2 > 0)
-        {
-            configs[config] = strConfig.substring(index1, index2).toInt();
-            index1 = index2 + 1;
-        }
-        else
-        {
-            configs[config] = strConfig.substring(index1).toInt();
-        }
-        config++;
-    }
-    //Process config values
-    tZone = configs[0];
-    dstType = configs[1];
-    Time.zone(tZone);
-    
-    return 0;
-}
 
 /*
 function to Send a message
