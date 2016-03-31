@@ -39,6 +39,7 @@ int lastEventDay = 0;
 int lastEventTime = -1;
 int tZone = 0;
 int dstType = 0;
+int holidayMode = 0;
 
 //0 = Off, 1 = On
 int radState = 0;
@@ -177,6 +178,7 @@ int receiveConfig(String strConfig)
     //Process config values
     tZone = configs[0];
     dstType = configs[1];
+    holidayMode = configs[2];
     Time.zone(tZone);
     
     return 0;
@@ -247,8 +249,16 @@ void execSchedule()
     }
     lastEventTime = intEventTime;
     lastEventDay = nowDay;
-    //Ignore first ever events if they are off events
-    if (newState != radState)
+    
+    // In holiday always set off
+    if (holidayMode != 0)
+    {
+        if(radState != 0)
+        {
+            sendCmd(0);
+            radState = 0;
+        }
+    } else if (newState != radState)
     {
             //Only process if enable flag is clear
         if((eventMinute & 0x800) == 0)
