@@ -177,6 +177,20 @@ function getPeriod($row) {
    }
 }
 
+function sortPeriodsByStartTime(periods) {
+    periods.sort(function(a,b) {
+        if (a.on < b.on) {
+            return -1;
+        }
+        else if (a.on > b.on) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    });
+}
+
 function getDayPeriods(day) {
    var periods = [];
       
@@ -199,18 +213,7 @@ function getDayPeriods(day) {
    // from earliest to latest, and there are no overlaps.
    if (periods.length > 1) {
       
-      // Sort the periods by start time
-      periods.sort(function(a,b) {
-         if (a.on < b.on) {
-            return -1;
-         }
-         else if (a.on > b.on) {
-            return 1;
-         }
-         else {
-            return 0;
-         }
-      });
+      sortPeriodsByStartTime(periods);
       
       // Check for overlaps
       var validPeriods = [];
@@ -251,8 +254,8 @@ function getCurrentSchedule() {
          for (day=0; day<7;day++) {
             for (period=0;period<4;period++) {
                var index = 8*day+2*period;
-               var timeOn = array[index];
-               var timeOff = array[index+1];
+               var timeOn = parseInt(array[index]);
+               var timeOff = parseInt(array[index+1]);
                if (timeOn != INVALID_TIME && timeOff != INVALID_TIME) {
                   var found = false;
                   for (i in sch) {
@@ -263,8 +266,8 @@ function getCurrentSchedule() {
                   }
                   if (found === false) {
                      sch.push({
-                        on: array[index],
-                        off: array[index+1],
+                        on: timeOn,
+                        off: timeOff,
                         days: [day]
                      });
                   }
@@ -274,6 +277,8 @@ function getCurrentSchedule() {
                }
             }
          }
+         
+         sortPeriodsByStartTime(sch);
          updateTable(sch);
          readingSchedule = false;
       }
