@@ -32,7 +32,7 @@
    <input type="text" id="rawValue" name="rawValue" size="10" value="0" style="display:none"/>   
 
    <script type="text/javascript">
-      var accessToken = "11111111111111111";
+      var accessToken = "0000000000000000000";
       var setScheduleFunc = "receiveSch";
       var getScheduleFunc = "schedule";
       var getStatusFunc   = "status";
@@ -43,11 +43,11 @@
          var devicename = document.getElementById('core').value;
          var ID;
          if (devicename == "photon") {
-            deviceID = "1111111111";
+            deviceID = "111111111111111111111";
          } else if (devicename == "core1") {
-            deviceID = "11111111111";
+            deviceID = "22222222222222222222222";
          } else if (devicename == "core2") {
-            deviceID = "111111111111111";
+            deviceID = "333333333333333333";
          } else {
             deviceID = "";
          }
@@ -75,7 +75,7 @@
             $.getJSON(requestURL, function(json) {
                var array = json.result.split(',');
                stat += "State: " + array[0] + "  LastDay:" + array[1] + " LastTime:" + array[2];
-               stat += "<BR>Time: " + array[3] + "  Msg:" + array[4];
+               stat += "<BR>Time: " + array[3] + "  Holiday:" + array[4]; + "  Msg:" + array[5];
                document.getElementById("curStatus").innerHTML = stat;
             });
          }
@@ -116,9 +116,7 @@
             var d;
             for(i=1;i<9;i++) {
                d = array[i].split(':');
-               if(d[0] >= 24) {
-                  array[i] = 4095;
-               } else {
+               if(d.length == 2) {
                   array[i] = parseInt(d[0])*60 + parseInt(d[1]);
                }
             }

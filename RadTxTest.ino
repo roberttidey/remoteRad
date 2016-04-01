@@ -387,6 +387,6 @@ function to create string version of status
 void makeStrStatus()
 {
     strStatus = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
-    strStatus += String(',') + Time.format(currentTime) + String(',') + String(strDebug);
+    strStatus += String(',') + Time.format(currentTime) + String(',') + String(holidayMode); + String(',') + String(strDebug);
 }
 
