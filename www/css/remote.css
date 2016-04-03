@@ -77,6 +77,14 @@ input[data-time="enable"] {
    margin-left: 15px;
 }
 
+.time-row-disabled .timepicker input {
+    background-color: #eee;
+}
+
+.time-row-disabled [data-time="days"] .btn-default.active {
+    background-color: #D0EACE;
+}
+
 button[data-time="delete"] {
    display: inline;
    vertical-align: middle;

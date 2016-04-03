@@ -36,7 +36,6 @@ function checkRaw() {
 }
 
 function refresh(updateRate) {
-   getCurrentStatus();
    getCurrentSchedule();
    setInterval(function(){ getCurrentStatus(); }, updateRate);
 }
@@ -75,9 +74,14 @@ function updateTable(sch) {
       // masking out bit 12.
       if (sch[i].on > 2047)
       {
+         $row.addClass("time-row-disabled")
          $("[data-time=\"enable\"]", $row).prop("checked", false);
          sch[i].on &= 2047;
          sch[i].off &= 2047;
+      }
+      else
+      {
+          $row.removeClass("time-row-disabled");
       }
          
       $("[data-time=\"on\"]", $row)
@@ -281,11 +285,14 @@ function getCurrentSchedule() {
          sortPeriodsByStartTime(sch);
          updateTable(sch);
          readingSchedule = false;
+         getCurrentStatus();
       }
    );
 }
 
 function updateSchedule() {
+   readingSchedule = true;
+    
    var sch = [];
    for (day=0; day<7; ++day) {
       var periods = getDayPeriods(day);
