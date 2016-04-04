@@ -3,7 +3,7 @@
  */
 var serverUrl = "remote.php";
 var deviceName = "core2";
-var readingSchedule = false;
+var updatingSchedule = false;
 var INVALID_TIME = 1440;
 
 $(document).ready(function() {
@@ -26,18 +26,23 @@ $(document).ready(function() {
    refresh(5000);
 });
 
-function checkRaw() {
-   var msg = document.getElementById('msgNumber').value;
-   if (msg == "9") {
-      document.getElementById('rawValue').style="display:inline";
-   } else {
-      document.getElementById('rawValue').style="display:none";
-   }
-}
-
 function refresh(updateRate) {
    getCurrentSchedule();
    setInterval(function(){ getCurrentStatus(); }, updateRate);
+}
+
+function setUpdatingSchedule(value, message) {
+    showLoading(value, message);
+    updatingSchedule = value;
+}
+
+function showLoading(show, message) {
+    $("#remote-loading-text").text(message || "");
+    var $loading = $("#remote-loading");
+    if ($loading.is(":hidden") === show)
+    {
+        $loading.modal("toggle");
+    }
 }
 
 function addRow($schedule, $template, index) {
@@ -112,7 +117,7 @@ function getCurrentStatus() {
          
          // Highlight the last active event
          // Don't do this if the schedule is currently being read, as the table may be incomplete.
-         if (readingSchedule === false)
+         if (updatingSchedule === false)
          {
              $(".time-onoff").removeClass("active");
              
@@ -250,7 +255,7 @@ function getDayPeriods(day) {
 }
 
 function getCurrentSchedule() {
-    readingSchedule = true;
+    setUpdatingSchedule(true, "Loading...");
    $.get(serverUrl + "?deviceName=" + deviceName + "&cmd=schedule", {},
       function(str) {
          var array = str.split(',');
@@ -284,14 +289,14 @@ function getCurrentSchedule() {
          
          sortPeriodsByStartTime(sch);
          updateTable(sch);
-         readingSchedule = false;
+         setUpdatingSchedule(false);
          getCurrentStatus();
       }
    );
 }
 
 function updateSchedule() {
-   readingSchedule = true;
+   setUpdatingSchedule(true, "Saving...");
     
    var sch = [];
    for (day=0; day<7; ++day) {
