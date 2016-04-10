@@ -101,6 +101,7 @@ else
    {
       case "status":
       case "schedule":
+      case "config":
          $result = doGet($deviceId, $cmd);
          break;
       case "receiveSch":

@@ -110,10 +110,12 @@ function getCurrentStatus() {
          var eventDay = parseInt(array[1]);
          var eventPeriod = parseInt(array[2]);
          var statusTime = moment(array[3]);
+         var temp = parseFloat(array[4]);
          
          // Set status values
          $("#status-onoff").toggleClass("status-on", radiatorOn).prop("title", radiatorOn ? "On" : "Off");
          $("#status-time").text(statusTime.format("ddd D MMM HH:mm"));
+         $("#status-temp").text(temp.toFixed(1));
          
          // Highlight the last active event
          // Don't do this if the schedule is currently being read, as the table may be incomplete.

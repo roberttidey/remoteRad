@@ -8,7 +8,7 @@ body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
 }
-body > .container {
+body > .tab-content {
   padding: 60px 15px 0;
 }
 
@@ -36,6 +36,33 @@ body > .container {
 
 .footer .container {
    padding-top: 15px;
+}
+
+#remote-loading {
+   text-align: center;
+}
+
+#remote-loading:before {
+   display: inline-block;
+   vertical-align: middle;
+   content: " ";
+   height: 100%;   
+}
+
+#remote-loading .modal-dialog {
+   display: inline-block;
+   text-align: left;
+   vertical-align: middle;
+   width: 200px;
+}
+
+#remote-loading .modal-content {
+   padding: 15px;
+   text-align: center;
+}
+
+#remote-loading-text {
+   margin: 10px 0 0 0;
 }
 
 #raw-code {

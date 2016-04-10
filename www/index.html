@@ -23,8 +23,8 @@
          </div>
          <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-               <li class="active"><a href="#">Schedule</a></li>
-               <li><a href="#settings">Settings</a></li>
+               <li class="active"><a href="#page-schedule" data-toggle="tab">Schedule</a></li>
+               <li><a href="#page-settings" data-toggle="tab">Settings</a></li>
             </ul>
             <p class="navbar-text navbar-right">
                <span id="status-onoff" 
@@ -33,81 +33,105 @@
                      data-placement="left" 
                      title=""></span>
                <span id="status-time"></span>
+               <span id="status-temp"></span>&deg;C
             </p>
          </div>
       </div>
    </nav>
 
-   <div id="page-schedule" class="container">
-      <form>
-         <div id="schedule">
-            <div id="time-row-template" class="time-row">
-               <div class="time-onoff">
-                  <div class="input-group bootstrap-timepicker timepicker">
-                     <span class="input-group-addon time-onoff-label">On</span>
-                     <input data-time="on" class="form-control" type="text" maxlength="5"/>
-                     <span class="input-group-addon">
-                        <i class="glyphicon glyphicon-time"></i>
-                     </span>
+   <div class="tab-content">
+      <div id="page-schedule" class="container tab-pane active">
+         <form>
+            <div id="schedule">
+               <div id="time-row-template" class="time-row">
+                  <div class="time-onoff">
+                     <div class="input-group bootstrap-timepicker timepicker">
+                        <span class="input-group-addon time-onoff-label">On</span>
+                        <input data-time="on" class="form-control" type="text" maxlength="5"/>
+                        <span class="input-group-addon">
+                           <i class="glyphicon glyphicon-time"></i>
+                        </span>
+                     </div>
                   </div>
-               </div>
-               <div class="time-onoff">
-                  <div class="input-group bootstrap-timepicker timepicker">
-                     <span class="input-group-addon time-onoff-label">Off</span>
-                     <input data-time="off" class="form-control" type="text" maxlength="5"/>
-                     <span class="input-group-addon">
-                        <i class="glyphicon glyphicon-time"></i>
-                     </span>
+                  <div class="time-onoff">
+                     <div class="input-group bootstrap-timepicker timepicker">
+                        <span class="input-group-addon time-onoff-label">Off</span>
+                        <input data-time="off" class="form-control" type="text" maxlength="5"/>
+                        <span class="input-group-addon">
+                           <i class="glyphicon glyphicon-time"></i>
+                        </span>
+                     </div>
                   </div>
+                  
+                  <div data-time="days" class="btn-group" data-toggle="buttons">
+                     <label class="btn btn-default">
+                        <input value="0" type="checkbox"/>Su
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="1" type="checkbox"/>Mo
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="2" type="checkbox"/>Tu
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="3" type="checkbox"/>We
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="4" type="checkbox"/>Th
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="5" type="checkbox"/>Fr
+                     </label>
+                     <label class="btn btn-default">
+                        <input value="6" type="checkbox"/>Sa
+                     </label>
+                  </div>
+                  
+                  <input data-time="enable" class="form-control" type="checkbox" checked="true"/>
+                  
+                  <button data-time="delete" class="btn btn-default" type="button">
+                     <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                  </button>
                </div>
+            </div>
+            
+            <div id="time-buttons">
+               <button id="time-add" class="btn btn-default" type="button">
+                  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add
+               </button>
                
-               <div data-time="days" class="btn-group" data-toggle="buttons">
-                  <label class="btn btn-default">
-                     <input value="0" type="checkbox"/>Su
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="1" type="checkbox"/>Mo
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="2" type="checkbox"/>Tu
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="3" type="checkbox"/>We
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="4" type="checkbox"/>Th
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="5" type="checkbox"/>Fr
-                  </label>
-                  <label class="btn btn-default">
-                     <input value="6" type="checkbox"/>Sa
-                  </label>
-               </div>
-               
-               <input data-time="enable" class="form-control" type="checkbox" checked="true"/>
-               
-               <button data-time="delete" class="btn btn-default" type="button">
-                  <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+               <button id="time-submit" class="btn btn-default" type="button">
+                  <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span> Save
                </button>
             </div>
-         </div>
          
-         <div id="time-buttons">
-            <button id="time-add" class="btn btn-default" type="button">
-               <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add
-            </button>
+         </form>
+         
+      </div>
+      
+      <div id="page-settings" class="container tab-pane">
+         <form class="form-horizontal hidden">
+            <div class="form-group">
+               <label class="col-sm-2 control-label" for="">Holiday Mode</label>
+               <div class="col-sm-10">
+                  <label class="radio-inline">
+                     <input type="radio" name="holiday" id="settings-holiday-on" value="1"> On
+                  </label>
+                  <label class="radio-inline">
+                     <input type="radio" name="holiday" id="settings-holiday-off" value="0"> Off
+                  </label>
+               </div>
+            </div>
             
-            <button id="time-submit" class="btn btn-default" type="button">
-               <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span> Save
-            </button>
-         </div>
-      
-      </form>
-      
-   </div>
-   
-   <div id="page-settings">
+            <div class="form-group">
+               <div class="col-sm-offset-2 col-sm-10">
+                  <button id="settings-submit" class="btn btn-default" type="button">
+                     <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span> Save
+                  </button>
+               </div>
+            </div>
+         </form>
+      </div>
    </div>
 
    <footer class="footer">
