@@ -13,7 +13,6 @@
 //#define AVR328 1
 #define SPARK_CORE 1
 
-
 //Include basic library header and set default TX pin
 #ifdef SPARK_CORE
 #include "application.h"
@@ -37,6 +36,9 @@
 //Sets up basic parameters must be called at least once
 extern void radtx_setup(int pin, byte repeats, byte invert, int uSec);
 
+//Update period and repeats
+extern void radtx_update(byte repeats, int uSec);
+
 //Checks whether tx is free to accept a new message
 extern boolean radtx_free();
 
@@ -49,6 +51,8 @@ extern int radtx_debug();
 //Genralised timer routines go here
 //Sets up timer and the callback to the interrupt service routine
 void rad_timer_Setup(void (*isrCallback)(), int period);
+
+void rad_timer_SetPeriod(int period);
 
 void rad_timer_Start();
 

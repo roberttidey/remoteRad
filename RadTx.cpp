@@ -216,7 +216,26 @@ void radtx_setup(int pin, byte repeats, byte invert, int period) {
 	rad_timer_Setup(isrTXtimer, period1);
 }
 
-// There are 3 timer support routines. Variants of these may be placed here to support different environments
+/**
+  Set things up to transmit messages
+**/
+void radtx_update(byte repeats, int period) {
+
+	if(repeats > 0 && repeats < 40) {
+	 tx_repeats = repeats;
+	}
+
+	int period1;
+	if (period > 32 && period < 1000) {
+		period1 = period; 
+	} else {
+		//default 140 uSec
+		period1 = 140;
+	}
+	rad_timer_SetPeriod(period1);
+}
+
+// There are 4 timer support routines. Variants of these may be placed here to support different environments
 void (*isrRoutine) ();
 #if defined(SPARK_CORE)
 //#include "SparkIntervalTimer.h"
@@ -230,6 +249,9 @@ extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	txmtTimer.begin(isrRoutine, period, uSec);	//set IntervalTimer interrupt at period uSec (default 140)
 	txmtTimer.interrupt_SIT(INT_DISABLE); // initialised as off, first message starts it
 	interrupts();
+}
+extern void rad_timer_SetPeriod(int period) {
+    txmtTimer.resetPeriod_SIT(period, uSec);
 }
 extern void rad_timer_Start() {
 	txmtTimer.interrupt_SIT(INT_ENABLE);
@@ -253,6 +275,9 @@ extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	txmtTimer.setPeriod(period);
 	interrupts();
 }
+extern void rad_timer_SetPeriod(int period) {
+    txmtTimer.setPeriod(period);
+}
 extern void rad_timer_Start() {
 	txmtTimer.start();
 }
@@ -265,6 +290,9 @@ extern void rad_timer_Stop() {
 //32u4 which uses the TIMER3
 extern void rad_timer_Setup(void (*isrCallback)(), int period) {
     isrRoutine = isrCallback; // unused here as callback is direct
+    rad_timer_SetPeriod(period);
+}
+extern void rad_timer_SetPeriod(int period) {
     byte clock = (period / 4) - 1;;
     cli();//stop interrupts
     //set timer2 interrupt at  clock uSec (default 140)
@@ -282,7 +310,6 @@ extern void rad_timer_Setup(void (*isrCallback)(), int period) {
     TIMSK3 &= ~(1 << OCIE3A);
     sei();//enable interrupts
 }
-
 extern void rad_timer_Start() {
    //enable timer 2 interrupts
     TIMSK3 |= (1 << OCIE3A);
@@ -302,6 +329,9 @@ ISR(TIMER3_COMPA_vect){
 //Default case is Arduino Mega328 which uses the TIMER2
 extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	isrRoutine = isrCallback; // unused here as callback is direct
+	rad_timer_SetPeriod(period);
+}
+extern void rad_timer_SetPeriod(int period) {
 	byte clock = (period / 4) - 1;;
 	cli();//stop interrupts
 	//set timer2 interrupt at  clock uSec (default 140)
@@ -318,7 +348,6 @@ extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	TIMSK2 &= ~(1 << OCIE2A);
 	sei();//enable interrupts
 }
-
 extern void rad_timer_Start() {
    //enable timer 2 interrupts
 	TIMSK2 |= (1 << OCIE2A);

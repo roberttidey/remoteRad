@@ -1,8 +1,21 @@
-// This #include statement was automatically added by the Particle IDE.
-#include "RadTx.h"
+//Main App for supporting RemoteRad operation from a web site.
+//R.J.Tidey & E.K.Tidey 2016
 
-// This #include statement was automatically added by the Particle IDE.
+
+//Use this define to include temperature measuring support
+#define DS18B20 1
+
+#include "RadTx.h"
 #include "SparkIntervalTimer/SparkIntervalTimer.h"
+
+#if defined(DS18B20)
+int ONEWIRE_PIN = D5;
+// This #include statement was automatically added by the Particle IDE.
+#include "OneWire/OneWire.h"
+// This #include statement was automatically added by the Particle IDE.
+#include "spark-dallas-temperature/spark-dallas-temperature.h"
+DallasTemperature dallas(new OneWire(ONEWIRE_PIN));
+#endif
 
 #define MAX_MSGS 10
 #define MSG_LEN 10
@@ -28,6 +41,10 @@ uint16_t msg[MSG_LEN * MAX_MSGS] = {BTN_ONOFF,0xffff,0,0,0,0,0,0,0,0,
                                     0x8079,0xffff,0,0,0,0,0,0,0,0
 };
 
+//Flash config location
+#define CONFIG_FLASH 85
+#define MAGIC_FLASH 165
+
 // schedule holds 4 on/off times per day
 // Each time is minutes from midnight 0-1439 11 sig bits
 // If 12th bit set then time event is ensabled
@@ -40,6 +57,8 @@ int lastEventTime = -1;
 int tZone = 0;
 int dstType = 0;
 int holidayMode = 0;
+int period = 100;
+int codeRepeat = 10;
 
 //0 = Off, 1 = On
 int radState = 0;
@@ -47,9 +66,11 @@ int execTimer = 0;
 int execTime = 5;
 int checkTime = 0;
 int currentTime = 0;
+float celsius = 0.0;
 
 String strSchedule;
 String strStatus;
+String strConfig;
 String strDebug;
 
 //protypes
@@ -59,17 +80,25 @@ int sendCmd(int msgIndex);
 void execSchedule();
 void loadSchedule();
 void saveSchedule();
+void loadConfig();
+void saveConfig();
 int receiveSchedule(String schedule);
+int receiveConfig(String strConfig);
 int setNtp(String ntpSetup);
 void makeStrSchedule();
 void makeStrStatus();
+void makeStrConfig();
 
 
 void setup() {
   //Transmit on pin IRLED, 10 repeats,no invert, 100uSec tick)
+#if defined(DS18B20)
+    dallas.begin();
+#endif
   pinMode(LED, OUTPUT);
-  radtx_setup(IRLED, 10, 0, 100);
+  radtx_setup(IRLED, codeRepeat, 0, period);
   loadSchedule();
+  loadConfig();
   Time.zone(tZone);
   Time.setFormat("%Y-%m-%dT%H:%M:%S");
   execTimer = Time.now();
@@ -79,6 +108,7 @@ void setup() {
   Particle.function("receiveConf", receiveConfig);
   Particle.variable("schedule", strSchedule);
   Particle.variable("status", strStatus);
+  Particle.variable("config", strConfig);
 }
 
 void loop() {
@@ -88,7 +118,12 @@ void loop() {
     if ((checkTime - execTimer) > execTime) {
       execTimer = checkTime;
       execSchedule();
+#if defined(DS18B20)
+      dallas.requestTemperatures();
+      celsius = dallas.getTempCByIndex(0);
+#endif
       makeStrStatus();
+      makeStrConfig();
     }
 }
 
@@ -176,10 +211,16 @@ int receiveConfig(String strConfig)
         config++;
     }
     //Process config values
-    tZone = configs[0];
+    holidayMode = configs[0];
     dstType = configs[1];
-    holidayMode = configs[2];
+    tZone = configs[2];
+    if (period != configs[3] || codeRepeat != configs[4]) {
+        period = configs[3];
+        codeRepeat = configs[4];
+        radtx_update(codeRepeat, period);
+    }
     Time.zone(tZone);
+    saveConfig();
     
     return 0;
 }
@@ -364,6 +405,37 @@ void saveSchedule()
 }
 
 /*
+function to load config from EEPROM
+*/
+void loadConfig()
+{
+    int eIndex = CONFIG_FLASH;
+    
+    if(EEPROM.read(eIndex++) == MAGIC_FLASH) {
+        tZone = EEPROM.read(eIndex++);
+        dstType = EEPROM.read(eIndex++);
+        holidayMode = EEPROM.read(eIndex++);
+        period = EEPROM.read(eIndex++);
+        codeRepeat = EEPROM.read(eIndex++);
+    }
+} 
+
+/*
+function to load config from EEPROM
+*/
+void saveConfig()
+{
+    int eIndex = CONFIG_FLASH;
+    
+    EEPROM.write(eIndex++, MAGIC_FLASH);
+    EEPROM.write(eIndex++, (uint8_t)tZone);
+    EEPROM.write(eIndex++, (uint8_t)dstType);
+    EEPROM.write(eIndex++, (uint8_t)holidayMode);
+    EEPROM.write(eIndex++, (uint8_t)period);
+    EEPROM.write(eIndex++, (uint8_t)codeRepeat);
+} 
+
+/*
 function to create string version of schedule
 56 values csv separated
 */
@@ -387,6 +459,16 @@ function to create string version of status
 void makeStrStatus()
 {
     strStatus = String(radState) + String(',') + String(lastEventDay) + String(',') + String(lastEventTime);
-    strStatus += String(',') + Time.format(currentTime) + String(',') + String(holidayMode); + String(',') + String(strDebug);
+    strStatus += String(',') + Time.format(currentTime) + String(',') + String(celsius); + String(',') + String(strDebug);
+}
+
+/*
+function to create string version of config
+ values csv separated
+*/
+void makeStrConfig()
+{
+    strConfig = String(holidayMode) + String(',') + String(dstType)+ String(',') + String(tZone);
+    strConfig += String(',') + String(period) + String(',') + String(codeRepeat);
 }
 

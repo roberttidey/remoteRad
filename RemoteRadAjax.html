@@ -12,7 +12,11 @@
    <button id="refresh" onclick="refresh();">Refresh</button><br>
    <h2>Current Schedule</h2><span id="curSchedule"></span>
    <h2>Current Status</h2><span id="curStatus"></span>
+   <h2>Current Config</h2><span id="curConfig"></span>
    <h2>Control</h2>
+   HolidayMode,DaylightType,TimeZone,Period,Repeats
+   <br><input type="text" id="configValue" name="configValue" size="50" value="0,0,0,100,10"/>
+   <button id="updateC" onclick="updateConfig()">Update Config</button><br><br> 
    Day + 4 On/off minute times
    <br><input type="text" id="schedValue" name="schedValue" size="50" value="0,06:00,08:00,10:00,12:00,13:00,14:00,18:00,23:00"/>
    <button id="updateS" onclick="updateSchedule()">Update Schedule</button><br><br> 
@@ -32,10 +36,12 @@
    <input type="text" id="rawValue" name="rawValue" size="10" value="0" style="display:none"/>   
 
    <script type="text/javascript">
-      var accessToken = "0000000000000000000";
+      var accessToken = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
       var setScheduleFunc = "receiveSch";
       var getScheduleFunc = "schedule";
       var getStatusFunc   = "status";
+      var setConfigFunc = "receiveConf";
+      var getConfigFunc   = "config";
       var sendMessageFunc = "sendMsg";
       var deviceID        = "";
       
@@ -43,11 +49,11 @@
          var devicename = document.getElementById('core').value;
          var ID;
          if (devicename == "photon") {
-            deviceID = "111111111111111111111";
+            deviceID = "aaaaaaaaaaaaaaaaaaaaa";
          } else if (devicename == "core1") {
-            deviceID = "22222222222222222222222";
+            deviceID = "bbbbbbbbbbbbbbbbbbb";
          } else if (devicename == "core2") {
-            deviceID = "333333333333333333";
+            deviceID = "ccccccccccccccccccc";
          } else {
             deviceID = "";
          }
@@ -64,6 +70,7 @@
       
       function refresh() {
          getCurrentStatus();
+         getCurrentConfig();
          setTimeout(function(){ getCurrentSchedule(); }, 1000);
       }
       
@@ -75,8 +82,22 @@
             $.getJSON(requestURL, function(json) {
                var array = json.result.split(',');
                stat += "State: " + array[0] + "  LastDay:" + array[1] + " LastTime:" + array[2];
-               stat += "<BR>Time: " + array[3] + "  Holiday:" + array[4]; + "  Msg:" + array[5];
+               stat += "<BR>Time: " + array[3] + "  Temp:" + array[4]; + "  Msg:" + array[5];
                document.getElementById("curStatus").innerHTML = stat;
+            });
+         }
+      }
+
+      function getCurrentConfig() {
+         var stat="";
+         getDeviceID();
+         if (deviceID != "") {
+            requestURL = "https://api.spark.io/v1/devices/" + deviceID + "/" + getConfigFunc + "/?access_token=" + accessToken;
+            $.getJSON(requestURL, function(json) {
+               var array = json.result.split(',');
+               stat += "HolidayMode: " + array[0] + "  DaylightType:" + array[1] + " TimeZone:" + array[2];
+               stat += " Period uSec: " + array[3] + "  RepeatCount:" + array[4];
+               document.getElementById("curConfig").innerHTML = stat;
             });
          }
       }
@@ -124,6 +145,15 @@
             var requestURL = "https://api.spark.io/v1/devices/" + deviceID + "/" + setScheduleFunc;
             $.post( requestURL, { params: strUpdate, access_token: accessToken });
             setTimeout(function(){ getCurrentSchedule(); }, 3000);
+         }
+      }
+
+      function updateConfig() {
+         if (deviceID != "") {
+            var strUpdate = document.getElementById('configValue').value;
+            var requestURL = "https://api.spark.io/v1/devices/" + deviceID + "/" + setConfigFunc;
+            $.post( requestURL, { params: strUpdate, access_token: accessToken });
+            setTimeout(function(){ getCurrentConfig(); }, 3000);
          }
       }
 
