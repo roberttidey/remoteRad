@@ -35,8 +35,8 @@ uint16_t msg[MSG_LEN * MAX_MSGS] = {BTN_ONOFF,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_TIME,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_DOWN,0xffff,0,0,0,0,0,0,0,0,
                                     BTN_UP,0xffff,0,0,0,0,0,0,0,0,
-                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
-                                    BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
+                                    BTN_ONOFF,BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,
+                                    BTN_ONOFF,BTN_ONOFF,0xffff,0,0,0,0,0,0,0,
                                     BTN_ONOFF,BTN_MODE,BTN_MODE,BTN_MODE,0xffff,0,0,0,0,0,
                                     0x8079,0xffff,0,0,0,0,0,0,0,0
 };
@@ -296,7 +296,7 @@ void execSchedule()
     {
         if(radState != 0)
         {
-            sendCmd(0);
+            sendCmd(7);
             radState = 0;
         }
     } else if (newState != radState)
@@ -307,7 +307,7 @@ void execSchedule()
             if(newState == 0)
             {
                 //Off period starting
-                sendCmd(0);
+                sendCmd(7);
                 radState = 0;
             }
             else
