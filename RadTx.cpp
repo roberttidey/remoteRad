@@ -22,17 +22,25 @@ static byte txon = 1;
 static byte txoff = 0;
 static boolean tx_msg_active = false; //set true to activate message sending
 
+//set fixed counter constants
+static const byte tx_on_pulse_long = 96;
+static const byte tx_on_pulse_short = 32;
+static const byte tx_toggle_precount = 7; //major tick = 7 * 13 = 91uSec
+
 static uint16_t tx_buf[tx_msglen_max]; // the message buffer
 static byte tx_repeat = 0; //counter for repeat of button
 static byte tx_state = 0;
+static byte tx_toggle_precounter = tx_toggle_precount;
 static byte tx_toggle_count = 1;
 static int tx_debug = 0;
 
 // These set the pulse durations in ticks
-static byte tx_PulseCounts[4] = {13,4,4,13}; // ticks for 0-On,1-On,0-Off,1-Off
-static byte tx_gap1_count = 66; // Repeat press gap count (6.6 msec)
+static byte tx_PulseCounts[4] = {96,30,30,96}; // quick ticks for 0-On,1-On,0-Off,1-Off
+static byte tx_gap1_count = 72; // Repeat press gap count (6.6 msec)
 static byte tx_gap2_mult = 250; // Long Gap muliplier 25mS
-static uint16_t tx_gap2_count = 20; // Inter message code gap count (units of 25mS)
+static uint16_t tx_gap2_count = 30; // Inter message code gap count (units of 22.7mS)
+static byte tx_onpulse_count = 0; // Used to modulate during on periods
+static byte tx_offpulse_count = 0; // Used to time off periods
 
 static const byte tx_state_idle = 0;
 static const byte tx_state_msgStart = 1;
@@ -53,109 +61,123 @@ static uint16_t tx_delay_counter = 0;
 static uint16_t tx_delay_count = 0; 
 
 void isrTXtimer() {
-   //Set low after toggle count interrupts
-   tx_toggle_count--;
-   if (tx_toggle_count < 1) {
-     switch (tx_state) {
-       case tx_state_idle:
-         if(tx_msg_active) {
-           tx_repeat = 0;
-           tx_toggle_count = 1;
-           tx_state = tx_state_msgStart;
-         }
-         break;
-       case tx_state_msgStart:
-         digitalWrite(tx_pin, txoff);
-         tx_toggle_count = 1;
-         tx_num_buttons = 0;
-         tx_state = tx_state_buttonStart;
-         break;
-       case tx_state_buttonStart:
-         if(tx_buf[tx_num_buttons] <= 0xfff) {
-           tx_toggle_count = 1;
-           tx_bit_mask = 0x800;
-           tx_state = tx_state_sendBitOn;
-         } else if (tx_buf[tx_num_buttons] == 0xffff) {
-           //disable timer interrupt
-           rad_timer_Stop();
-           tx_msg_active = false;
-           tx_toggle_count = 1;
-           tx_state = tx_state_idle;
-         } else {
-           tx_toggle_count = 1;
-           tx_state = tx_state_delayStart;
-         }
-         break;
-       case tx_state_sendBitOn:
-         digitalWrite(tx_pin, txon);
-         if(tx_buf[tx_num_buttons] & tx_bit_mask) {
-           tx_toggle_count = tx_PulseCounts[1];
-         } else {
-           tx_toggle_count = tx_PulseCounts[0];
-         }
-         tx_state = tx_state_sendBitOff;
-         break;
-       case tx_state_sendBitOff:
-         digitalWrite(tx_pin, txoff);
-         if(tx_buf[tx_num_buttons] & tx_bit_mask) {
-           tx_toggle_count = tx_PulseCounts[3];
-         } else {
-           tx_toggle_count = tx_PulseCounts[2];
-         }
-         tx_bit_mask >>=1;
-         if(tx_bit_mask == 0) {
-           tx_state = tx_state_gap1Start;
-         } else {
-            tx_state = tx_state_sendBitOn;
-         }
-         break;
-       case tx_state_gap1Start:
-         tx_toggle_count = tx_gap1_count;
-         tx_state = tx_state_gap1End;
-         break;
-       case tx_state_gap1End:
-         tx_repeat++;
-         if(tx_repeat < tx_repeats) {
-           tx_toggle_count = 1;
-           tx_state = tx_state_buttonStart;
-         } else {
-           tx_state = tx_state_gap2Start;
-         }
-         break;
-       case tx_state_gap2Start:
-         tx_toggle_count = tx_gap2_mult;
-         tx_delay_counter = 0;
-         tx_state = tx_state_gap2End;
-         break;
-       case tx_state_gap2End:
-         tx_delay_counter++;
-         if(tx_delay_counter >= tx_gap2_count) {
-           tx_toggle_count = 1;
-           tx_num_buttons++;
-           tx_repeat = 0;
-           tx_state = tx_state_buttonStart;
-         } else {
-           tx_toggle_count = tx_gap2_mult;
-         }
-         break;
-       case tx_state_delayStart:
-         tx_toggle_count = tx_gap2_mult;
-         tx_delay_counter = 0;
-         tx_delay_count = tx_buf[tx_num_buttons] & 0x7fff;
-         tx_state = tx_state_delayEnd;
-         break;
-       case tx_state_delayEnd:
-         tx_delay_counter++;
-         if(tx_delay_counter >= tx_delay_count) {
-           tx_toggle_count = 1;
-           tx_num_buttons++;
-           tx_state = tx_state_buttonStart;
-         } else {
-           tx_toggle_count = tx_gap2_mult;
-         }
-         break;
-     }
-   }
+	if (tx_onpulse_count > 0) {
+		tx_onpulse_count--;
+		digitalWrite(tx_pin, tx_onpulse_count & 1);
+	} else if (tx_offpulse_count > 0) {
+		tx_offpulse_count--;
+	} else {
+		tx_toggle_precounter--;
+		if(tx_toggle_precounter < 1) {
+			toggle_precounter = tx_toggle_precount;
+			tx_toggle_count--;
+			if (tx_toggle_count < 1) {
+				switch (tx_state) {
+					case tx_state_idle:
+						if(tx_msg_active) {
+						tx_repeat = 0;
+						tx_toggle_count = 1;
+						tx_state = tx_state_msgStart;
+						break;
+					case tx_state_msgStart:
+						digitalWrite(tx_pin, txoff);
+						tx_toggle_count = 1;
+						tx_num_buttons = 0;
+						tx_state = tx_state_buttonStart;
+						break;
+					case tx_state_buttonStart:
+						if(tx_buf[tx_num_buttons] <= 0xfff) {
+							tx_toggle_count = 1;
+							tx_bit_mask = 0x800;
+							tx_state = tx_state_sendBitOn;
+						} else if (tx_buf[tx_num_buttons] == 0xffff) {
+							//disable timer interrupt
+							rad_timer_Stop();
+							tx_msg_active = false;
+							tx_toggle_count = 1;
+							tx_state = tx_state_idle;
+						} else {
+							tx_toggle_count = 1;
+							tx_state = tx_state_delayStart;
+						}
+						break;
+					case tx_state_sendBitOn:
+						tx_toggle_count = 1;
+						tx_toggle_precounter =1;
+						// set up quick toggle count
+						if(tx_buf[tx_num_buttons] & tx_bit_mask) {
+							tx_onpulse_count = tx_PulseCounts[1];
+						} else {
+							tx_onpulse_count = tx_PulseCounts[0];
+						}
+						tx_state = tx_state_sendBitOff;
+						break;
+					case tx_state_sendBitOff:
+						digitalWrite(tx_pin, txoff);
+						tx_toggle_count = 1;
+						tx_toggle_precounter =1;
+						if(tx_buf[tx_num_buttons] & tx_bit_mask) {
+							tx_offpulse_count = tx_PulseCounts[3];
+						} else {
+							tx_offpulse_count = tx_PulseCounts[2];
+						}
+						tx_bit_mask >>=1;
+						if(tx_bit_mask == 0) {
+							tx_state = tx_state_gap1Start;
+						} else {
+							tx_state = tx_state_sendBitOn;
+						}
+						break;
+					case tx_state_gap1Start:
+						tx_toggle_count = tx_gap1_count;
+						tx_state = tx_state_gap1End;
+						break;
+					case tx_state_gap1End:
+						tx_repeat++;
+						if(tx_repeat < tx_repeats) {
+							tx_toggle_count = 1;
+							tx_state = tx_state_buttonStart;
+						} else {
+							tx_state = tx_state_gap2Start;
+						}
+						break;
+					case tx_state_gap2Start:
+						tx_toggle_count = tx_gap2_mult;
+						tx_delay_counter = 0;
+						tx_state = tx_state_gap2End;
+						break;
+					case tx_state_gap2End:
+						tx_delay_counter++;
+						if(tx_delay_counter >= tx_gap2_count) {
+							tx_toggle_count = 1;
+							tx_num_buttons++;
+							tx_repeat = 0;
+							tx_state = tx_state_buttonStart;
+						} else {
+							tx_toggle_count = tx_gap2_mult;
+						}
+						break;
+					case tx_state_delayStart:
+						tx_toggle_count = tx_gap2_mult;
+						tx_delay_counter = 0;
+						tx_delay_count = tx_buf[tx_num_buttons] & 0x7fff;
+						tx_state = tx_state_delayEnd;
+						break;
+					case tx_state_delayEnd:
+						tx_delay_counter++;
+						if(tx_delay_counter >= tx_delay_count) {
+							tx_toggle_count = 1;
+							tx_num_buttons++;
+							tx_state = tx_state_buttonStart;
+						} else {
+							tx_toggle_count = tx_gap2_mult;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 /**
@@ -207,7 +229,7 @@ void radtx_setup(int pin, byte repeats, byte invert, int period) {
 	}
 	
 	int period1;
-	if (period > 32 && period < 1000) {
+	if (period > 5 && period < 1000) {
 		period1 = period; 
 	} else {
 		//default 140 uSec
@@ -226,7 +248,7 @@ void radtx_update(byte repeats, int period) {
 	}
 
 	int period1;
-	if (period > 32 && period < 1000) {
+	if (period > 5 && period < 1000) {
 		period1 = period; 
 	} else {
 		//default 140 uSec
@@ -246,7 +268,7 @@ IntervalTimer txmtTimer;
 extern void rad_timer_Setup(void (*isrCallback)(), int period) {
 	isrRoutine = isrCallback;
 	noInterrupts();
-	txmtTimer.begin(isrRoutine, period, uSec);	//set IntervalTimer interrupt at period uSec (default 140)
+	txmtTimer.begin(isrRoutine, period, uSec);	//set IntervalTimer interrupt at period uSec (default 16)
 	txmtTimer.interrupt_SIT(INT_DISABLE); // initialised as off, first message starts it
 	interrupts();
 }

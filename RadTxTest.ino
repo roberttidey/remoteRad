@@ -57,7 +57,7 @@ int lastEventTime = -1;
 int tZone = 0;
 int dstType = 0;
 int holidayMode = 0;
-int period = 100;
+int period = 13;
 int codeRepeat = 10;
 
 //0 = Off, 1 = On
